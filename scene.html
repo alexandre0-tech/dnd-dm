@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Quête — Donjon & Dragons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#080604;--surface:#12100d;--surface2:#1c1915;--border:rgba(180,140,60,0.2);--gold:#c9a84c;--gold-light:#e8c96a;--text:#e8dcc8;--text-muted:#8a7a62;--text-dim:#4a3e2e}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Crimson Text',Georgia,serif;font-size:17px;min-height:100vh;overflow-x:hidden}
+#scene{min-height:100vh;display:flex;flex-direction:column;padding-bottom:80px}
+.scene-hero{position:relative;height:52vh;min-height:300px;overflow:hidden;background:#0d0b08;display:flex;align-items:center;justify-content:center}
+.scene-hero svg{width:100%;height:100%;position:absolute;inset:0}
+.scene-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(8,6,4,0) 30%,rgba(8,6,4,1) 100%);z-index:2}
+.scene-body{flex:1;max-width:820px;margin:0 auto;padding:0 1.25rem 2rem;width:100%}
+.scene-label{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.16em;color:var(--gold);text-transform:uppercase;margin-bottom:.5rem;opacity:.8}
+.scene-title{font-family:'Cinzel',serif;font-size:2rem;font-weight:700;color:var(--gold-light);line-height:1.2;margin-bottom:.6rem}
+.scene-type{font-size:.9rem;color:var(--text-muted);font-style:italic;margin-bottom:1.25rem}
+.scene-desc{font-size:1.05rem;line-height:1.8;color:var(--text);margin-bottom:1.5rem;border-left:2px solid rgba(201,168,76,0.25);padding-left:1rem}
+.ambiance-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:1.5rem}
+.ambiance-tag{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:.45rem .75rem;font-size:.88rem;color:var(--text-muted)}
+.sensory-box{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1rem 1.25rem;margin-bottom:1.5rem}
+.sensory-title{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.12em;color:var(--text-dim);text-transform:uppercase;margin-bottom:.75rem}
+.sensory-text{font-size:.93rem;color:var(--text-muted);line-height:1.8;white-space:pre-line}
+.monsters-section{margin-bottom:1.5rem}
+.section-title{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.14em;color:var(--text-dim);text-transform:uppercase;margin-bottom:.75rem}
+.monster-row{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--border);border-radius:6px;padding:.9rem 1rem;margin-bottom:.6rem;background:var(--surface)}
+.monster-emoji-wrap{width:72px;height:72px;border-radius:4px;overflow:hidden;flex-shrink:0;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:2rem}
+.monster-info{flex:1}
+.monster-name{font-family:'Cinzel',serif;font-size:.95rem;font-weight:600;color:var(--gold-light);margin-bottom:.2rem}
+.monster-cr{font-size:.8rem;color:var(--text-muted);margin-bottom:.35rem}
+.monster-desc{font-size:.9rem;color:var(--text-muted);line-height:1.6;font-style:italic}
+.combat-section{margin-bottom:2rem}
+.grid-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;align-items:center}
+.token-btn{display:flex;align-items:center;gap:5px;padding:.35rem .8rem;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.06em;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:transparent;color:var(--text-muted);transition:all .2s}
+.token-btn:hover{color:var(--gold);border-color:rgba(201,168,76,.4)}
+.token-btn.selected{background:rgba(201,168,76,.1);border-color:var(--gold);color:var(--gold)}
+.token-dot{width:16px;height:16px;border-radius:50%;flex-shrink:0}
+.grid-canvas-wrap{border:1px solid var(--border);border-radius:6px;overflow:hidden;background:#0a0806}
+canvas{display:block;cursor:crosshair}
+.grid-hint{font-size:.8rem;color:var(--text-dim);margin-top:.5rem}
+.bg-select{padding:.35rem .7rem;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text-muted);font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.06em;cursor:pointer}
+.bg-select:focus{outline:none;border-color:var(--gold)}
+.clear-btn{padding:.35rem .8rem;font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.06em;border:1px solid rgba(180,60,60,.35);border-radius:4px;cursor:pointer;background:transparent;color:#b06060;transition:all .2s;margin-left:auto}
+.clear-btn:hover{background:rgba(180,60,60,.1)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:.6rem}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:.82rem;color:var(--text-muted)}
+nav{position:fixed;bottom:0;left:0;right:0;background:rgba(8,6,4,.92);backdrop-filter:blur(12px);border-top:1px solid var(--border);padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;z-index:200}
+.nav-btn{padding:.5rem 1.4rem;font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.1em;border:1px solid var(--border);border-radius:4px;cursor:pointer;background:transparent;color:var(--text-muted);transition:all .2s}
+.nav-btn:hover:not(:disabled){color:var(--gold);border-color:rgba(201,168,76,.5)}
+.nav-btn:disabled{opacity:.25;cursor:default}
+.nav-center{text-align:center}
+.nav-scene-num{font-family:'Cinzel',serif;font-size:.65rem;color:var(--text-dim)}
+.nav-scene-name{font-family:'Cinzel',serif;font-size:.8rem;color:var(--gold);margin-top:.1rem}
+@media(max-width:500px){.scene-title{font-size:1.4rem}.ambiance-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div id="scene">
+  <div class="scene-hero" id="hero">
+    <div id="heroSvg" style="position:absolute;inset:0;z-index:1"></div>
+    <div class="scene-hero-overlay"></div>
+  </div>
+  <div class="scene-body">
+    <div class="scene-label" id="sceneLabel"></div>
+    <div class="scene-title" id="sceneTitle"></div>
+    <div class="scene-type" id="sceneType"></div>
+    <div class="scene-desc" id="sceneDesc"></div>
+    <div class="ambiance-grid" id="ambianceTags"></div>
+    <div class="sensory-box">
+      <div class="sensory-title">Détails sensoriels</div>
+      <div class="sensory-text" id="sensoryText"></div>
+    </div>
+    <div class="monsters-section" id="monstersSection">
+      <div class="section-title">Ennemis présents</div>
+      <div id="monstersList"></div>
+    </div>
+    <div class="combat-section">
+      <div class="section-title">Carte de combat</div>
+      <div class="grid-controls">
+        <div id="tokenBar"></div>
+        <select class="bg-select" id="bgSel" onchange="changeBg()">
+          <option value="dungeon">Donjon</option>
+          <option value="forest">Forêt</option>
+          <option value="taverne">Taverne</option>
+          <option value="cave">Grotte</option>
+          <option value="plaine">Plaine</option>
+        </select>
+        <button class="clear-btn" onclick="clearTokens()">Vider</button>
+      </div>
+      <div class="grid-canvas-wrap"><canvas id="grid"></canvas></div>
+      <div class="grid-hint">Clique pour placer · Clic droit pour supprimer</div>
+      <div class="legend" id="legend"></div>
+    </div>
+  </div>
+</div>
+
+<nav>
+  <button class="nav-btn" id="prevBtn" onclick="navigate(-1)">← Précédent</button>
+  <div class="nav-center">
+    <div class="nav-scene-num" id="navNum"></div>
+    <div class="nav-scene-name" id="navName"></div>
+  </div>
+  <button class="nav-btn" id="nextBtn" onclick="navigate(1)">Suivant →</button>
+</nav>
+
+<script src="data/session.js"></script>
+<script>
+/* ══ SVG ILLUSTRATIONS ══ */
+const illustrations = {
+
+  0: `<svg viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="g0" cx="50%" cy="100%" r="70%">
+        <stop offset="0%" stop-color="#1a1200"/>
+        <stop offset="100%" stop-color="#000"/>
+      </radialGradient>
+      <radialGradient id="gl0" cx="50%" cy="80%" r="30%">
+        <stop offset="0%" stop-color="#c9a84c" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="800" height="460" fill="url(#g0)"/>
+    <rect width="800" height="460" fill="url(#gl0)"/>
+    <!-- Marches descendantes -->
+    <g fill="none" stroke="#3a2e12" stroke-width="1.5">
+      <polygon points="300,80 500,80 540,130 260,130" fill="#1a1408"/>
+      <polygon points="260,130 540,130 580,185 220,185" fill="#161208"/>
+      <polygon points="220,185 580,185 620,245 180,245" fill="#121005"/>
+      <polygon points="180,245 620,245 660,310 140,310" fill="#0e0d04"/>
+      <polygon points="140,310 660,310 700,380 100,380" fill="#0a0902"/>
+      <!-- Côtés gauche -->
+      <line x1="300" y1="80" x2="260" y2="130" stroke="#2a2208"/>
+      <line x1="260" y1="130" x2="220" y2="185" stroke="#2a2208"/>
+      <line x1="220" y1="185" x2="180" y2="245" stroke="#2a2208"/>
+      <line x1="180" y1="245" x2="140" y2="310" stroke="#2a2208"/>
+      <line x1="140" y1="310" x2="100" y2="380" stroke="#2a2208"/>
+      <!-- Côtés droit -->
+      <line x1="500" y1="80" x2="540" y2="130" stroke="#2a2208"/>
+      <line x1="540" y1="130" x2="580" y2="185" stroke="#2a2208"/>
+      <line x1="580" y1="185" x2="620" y2="245" stroke="#2a2208"/>
+      <line x1="620" y1="245" x2="660" y2="310" stroke="#2a2208"/>
+      <line x1="660" y1="310" x2="700" y2="380" stroke="#2a2208"/>
+    </g>
+    <!-- Gravures murs -->
+    <g stroke="#2a1e06" stroke-width="1" fill="none" opacity="0.6">
+      <path d="M80,60 Q100,40 120,60 Q100,80 80,60"/>
+      <path d="M90,100 L95,120 L100,100 L105,120 L110,100"/>
+      <path d="M680,60 Q700,40 720,60 Q700,80 680,60"/>
+      <path d="M690,100 L695,120 L700,100 L705,120 L710,100"/>
+      <circle cx="100" cy="150" r="8" stroke="#2a1e06"/>
+      <circle cx="700" cy="150" r="8" stroke="#2a1e06"/>
+    </g>
+    <!-- Lumière dorée au bas des marches -->
+    <ellipse cx="400" cy="400" rx="120" ry="30" fill="#c9a84c" opacity="0.06"/>
+    <!-- Torche lueur -->
+    <circle cx="400" cy="380" r="40" fill="#c9a84c" opacity="0.04"/>
+  </svg>`,
+
+  1: `<svg viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0a0800"/>
+        <stop offset="100%" stop-color="#0d0b04"/>
+      </linearGradient>
+    </defs>
+    <rect width="800" height="460" fill="url(#g1)"/>
+    <!-- Murs du couloir -->
+    <rect x="0" y="0" width="160" height="460" fill="#0e0c04"/>
+    <rect x="640" y="0" width="160" height="460" fill="#0e0c04"/>
+    <!-- Sol et plafond -->
+    <rect x="160" y="0" width="480" height="30" fill="#141008"/>
+    <rect x="160" y="430" width="480" height="30" fill="#141008"/>
+    <!-- Perspective couloir -->
+    <polygon points="160,30 640,30 500,200 300,200" fill="#0c0a02" opacity="0.5"/>
+    <polygon points="160,430 640,430 500,260 300,260" fill="#0c0a02" opacity="0.5"/>
+    <!-- Trous dans le mur gauche -->
+    <g fill="#060502">
+      <circle cx="165" cy="80" r="8"/>
+      <circle cx="162" cy="140" r="7"/>
+      <circle cx="166" cy="200" r="8"/>
+      <circle cx="163" cy="260" r="7"/>
+      <circle cx="165" cy="320" r="8"/>
+      <circle cx="162" cy="380" r="7"/>
+    </g>
+    <!-- Trous dans le mur droit -->
+    <g fill="#060502">
+      <circle cx="635" cy="110" r="8"/>
+      <circle cx="638" cy="170" r="7"/>
+      <circle cx="634" cy="230" r="8"/>
+      <circle cx="637" cy="290" r="7"/>
+      <circle cx="635" cy="350" r="8"/>
+      <circle cx="638" cy="410" r="7"/>
+    </g>
+    <!-- Jets d'air (lignes) -->
+    <g stroke="#8ab0d0" stroke-width="1.5" opacity="0.3">
+      <line x1="170" y1="80" x2="320" y2="82"/>
+      <line x1="170" y1="260" x2="350" y2="258"/>
+      <line x1="630" y1="170" x2="480" y2="172"/>
+      <line x1="630" y1="350" x2="460" y2="348"/>
+    </g>
+    <!-- Lumière au fond -->
+    <ellipse cx="400" cy="230" rx="60" ry="80" fill="#c9a84c" opacity="0.05"/>
+    <ellipse cx="400" cy="230" rx="20" ry="30" fill="#c9a84c" opacity="0.08"/>
+    <!-- Sol propre (ligne) -->
+    <line x1="160" y1="430" x2="640" y2="430" stroke="#1e1a06" stroke-width="2"/>
+  </svg>`,
+
+  2: `<svg viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="g2" cx="50%" cy="50%" r="70%">
+        <stop offset="0%" stop-color="#100c00"/>
+        <stop offset="100%" stop-color="#060400"/>
+      </radialGradient>
+    </defs>
+    <rect width="800" height="460" fill="url(#g2)"/>
+    <!-- Salle carrée -->
+    <rect x="80" y="40" width="640" height="380" fill="none" stroke="#2a2008" stroke-width="2"/>
+    <!-- Quatre statues aux coins -->
+    <!-- Statue Roi (haut-gauche) -->
+    <g fill="#1a1508" stroke="#2a2008" stroke-width="1">
+      <rect x="110" y="70" width="30" height="60"/>
+      <ellipse cx="125" cy="68" rx="14" ry="16" fill="#201808"/>
+      <!-- Couronne -->
+      <path d="M112,58 L118,45 L125,55 L132,45 L138,58" stroke="#3a2e10" fill="none" stroke-width="1.5"/>
+      <!-- Inscription -->
+      <rect x="105" y="135" width="40" height="12" fill="#141005" stroke="#2a1e06"/>
+    </g>
+    <!-- Statue Prêtre (haut-droit) -->
+    <g fill="#1a1508" stroke="#2a2008" stroke-width="1">
+      <rect x="660" y="70" width="30" height="60"/>
+      <ellipse cx="675" cy="68" rx="14" ry="16" fill="#201808"/>
+      <!-- Crosse -->
+      <path d="M678,45 Q690,35 685,55" stroke="#3a2e10" fill="none" stroke-width="1.5"/>
+      <rect x="655" y="135" width="40" height="12" fill="#141005" stroke="#2a1e06"/>
+    </g>
+    <!-- Statue Guerrier (bas-gauche) -->
+    <g fill="#1a1508" stroke="#2a2008" stroke-width="1">
+      <rect x="110" y="310" width="30" height="60"/>
+      <ellipse cx="125" cy="308" rx="14" ry="16" fill="#201808"/>
+      <!-- Épée -->
+      <line x1="125" y1="280" x2="125" y2="308" stroke="#c9a84c" stroke-width="2" opacity="0.4"/>
+      <rect x="105" y="373" width="40" height="12" fill="#141005" stroke="#2a1e06"/>
+    </g>
+    <!-- Statue Créature (bas-droit) -->
+    <g fill="#1a1508" stroke="#2a2008" stroke-width="1">
+      <rect x="660" y="310" width="30" height="60"/>
+      <ellipse cx="675" cy="305" rx="18" ry="20" fill="#201808"/>
+      <!-- Forme bizarre -->
+      <path d="M660,290 Q665,275 675,285 Q685,275 690,290" stroke="#2a2008" fill="none" stroke-width="1"/>
+      <rect x="655" y="373" width="40" height="12" fill="#141005" stroke="#2a1e06"/>
+    </g>
+    <!-- Porte du fond (fermée) -->
+    <rect x="350" y="340" width="100" height="80" fill="#0e0c04" stroke="#2a1e06" stroke-width="2"/>
+    <circle cx="400" cy="380" r="5" fill="#2a1e06"/>
+    <!-- Lumière dorée centrale - symbole de jugement -->
+    <g opacity="0.15">
+      <line x1="400" y1="100" x2="400" y2="340" stroke="#c9a84c" stroke-width="1" stroke-dasharray="4,4"/>
+      <line x1="150" y1="230" x2="650" y2="230" stroke="#c9a84c" stroke-width="1" stroke-dasharray="4,4"/>
+    </g>
+    <circle cx="400" cy="230" r="8" fill="#c9a84c" opacity="0.12"/>
+    <!-- Éclairage ambiant -->
+    <radialGradient id="lamp2" cx="50%" cy="50%" r="40%">
+      <stop offset="0%" stop-color="#c9a84c" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <rect width="800" height="460" fill="url(#lamp2)"/>
+  </svg>`,
+
+  3: `<svg viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="g3" cx="50%" cy="50%" r="60%">
+        <stop offset="0%" stop-color="#000814"/>
+        <stop offset="100%" stop-color="#00060e"/>
+      </radialGradient>
+    </defs>
+    <rect width="800" height="460" fill="url(#g3)"/>
+    <!-- Salle circulaire -->
+    <ellipse cx="400" cy="230" rx="340" ry="210" fill="none" stroke="#1a2030" stroke-width="2"/>
+    <!-- Vitre de cristal centrale verticale -->
+    <rect x="395" y="40" width="10" height="380" fill="#4080c0" opacity="0.12"/>
+    <rect x="393" y="40" width="14" height="380" fill="none" stroke="#60a0e0" stroke-width="1.5" opacity="0.4"/>
+    <!-- Reflets sur la vitre -->
+    <line x1="398" y1="60" x2="398" y2="400" stroke="#a0c8f0" stroke-width="0.5" opacity="0.3"/>
+    <line x1="402" y1="60" x2="402" y2="400" stroke="#ffffff" stroke-width="0.5" opacity="0.15"/>
+    <!-- Mécanismes gauche -->
+    <g fill="none" stroke="#2a3040" stroke-width="1.5">
+      <rect x="120" y="120" width="50" height="50" rx="4" fill="#0e1420"/>
+      <circle cx="145" cy="145" r="15" stroke="#3a4860"/>
+      <line x1="145" y1="130" x2="145" y2="160" stroke="#4a5870"/>
+      <rect x="120" y="250" width="50" height="50" rx="4" fill="#0e1420"/>
+      <circle cx="145" cy="275" r="15" stroke="#3a4860"/>
+      <line x1="130" y1="275" x2="160" y2="275" stroke="#4a5870"/>
+    </g>
+    <!-- Mécanismes droite -->
+    <g fill="none" stroke="#2a3040" stroke-width="1.5">
+      <rect x="630" y="120" width="50" height="50" rx="4" fill="#0e1420"/>
+      <circle cx="655" cy="145" r="15" stroke="#3a4860"/>
+      <line x1="642" y1="132" x2="668" y2="158" stroke="#4a5870"/>
+      <rect x="630" y="250" width="50" height="50" rx="4" fill="#0e1420"/>
+      <circle cx="655" cy="275" r="15" stroke="#3a4860"/>
+      <line x1="655" y1="260" x2="655" y2="290" stroke="#4a5870"/>
+    </g>
+    <!-- Deux groupes de silhouettes -->
+    <!-- Gauche -->
+    <g fill="#1a2535" opacity="0.7">
+      <ellipse cx="240" cy="200" rx="12" ry="15"/>
+      <rect x="232" y="215" width="16" height="30" rx="3"/>
+      <ellipse cx="290" cy="210" rx="12" ry="15"/>
+      <rect x="282" y="225" width="16" height="30" rx="3"/>
+    </g>
+    <!-- Droite -->
+    <g fill="#1a2535" opacity="0.7">
+      <ellipse cx="510" cy="200" rx="12" ry="15"/>
+      <rect x="502" y="215" width="16" height="30" rx="3"/>
+      <ellipse cx="560" cy="210" rx="12" ry="15"/>
+      <rect x="552" y="225" width="16" height="30" rx="3"/>
+    </g>
+    <!-- Rayons lumineux qui se croisent -->
+    <line x1="145" y1="145" x2="395" y2="230" stroke="#6090d0" stroke-width="1" opacity="0.25"/>
+    <line x1="145" y1="275" x2="395" y2="230" stroke="#6090d0" stroke-width="1" opacity="0.25"/>
+    <line x1="655" y1="145" x2="405" y2="230" stroke="#6090d0" stroke-width="1" opacity="0.25"/>
+    <circle cx="400" cy="230" r="12" fill="#6090d0" opacity="0.15"/>
+    <!-- Lueur bleue ambiante -->
+    <radialGradient id="blue3" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2060a0" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <rect width="800" height="460" fill="url(#blue3)"/>
+  </svg>`,
+
+  4: `<svg viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="g4" cx="50%" cy="50%" r="60%">
+        <stop offset="0%" stop-color="#000a12"/>
+        <stop offset="100%" stop-color="#000408"/>
+      </radialGradient>
+    </defs>
+    <rect width="800" height="460" fill="url(#g4)"/>
+    <!-- Salle circulaire -->
+    <ellipse cx="400" cy="230" rx="360" ry="210" fill="none" stroke="#102030" stroke-width="1.5"/>
+    <!-- Cercle de pierre central -->
+    <circle cx="400" cy="260" r="100" fill="none" stroke="#1a3050" stroke-width="3"/>
+    <circle cx="400" cy="260" r="90" fill="none" stroke="#102040" stroke-width="1" stroke-dasharray="8,6"/>
+    <!-- Runes sur le cercle -->
+    <g fill="none" stroke="#1a4060" stroke-width="1.2" opacity="0.8">
+      <path d="M390,165 L400,155 L410,165 L400,175 Z"/>
+      <path d="M310,220 L300,230 L310,240 L320,230 Z"/>
+      <path d="M480,220 L490,230 L480,240 L470,230 Z"/>
+      <path d="M390,345 L400,355 L410,345 L400,335 Z"/>
+    </g>
+    <!-- Chaînes spectrales convergentes -->
+    <g stroke="#2060a0" stroke-width="2" fill="none" opacity="0.5" stroke-dasharray="6,4">
+      <path d="M80,60 Q200,150 380,250"/>
+      <path d="M720,60 Q600,150 420,250"/>
+      <path d="M80,400 Q200,310 380,270"/>
+      <path d="M720,400 Q600,310 420,270"/>
+      <path d="M400,30 Q400,120 400,240"/>
+    </g>
+    <!-- Forme centrale instable (Sael) -->
+    <g opacity="0.6">
+      <ellipse cx="400" cy="230" rx="25" ry="35" fill="#102040" stroke="#3070b0" stroke-width="1"/>
+      <ellipse cx="400" cy="210" rx="16" ry="18" fill="#0a1830" stroke="#3070b0" stroke-width="1"/>
+      <!-- Yeux de lumière froide -->
+      <circle cx="394" cy="208" r="3" fill="#60a0e0" opacity="0.8"/>
+      <circle cx="406" cy="208" r="3" fill="#60a0e0" opacity="0.8"/>
+    </g>
+    <!-- Fissures dans le cercle -->
+    <g stroke="#3070b0" stroke-width="1" opacity="0.4">
+      <path d="M350,260 Q370,255 390,265"/>
+      <path d="M410,255 Q430,250 450,260"/>
+    </g>
+    <!-- Lueur bleue pulsante -->
+    <radialGradient id="pulse4" cx="50%" cy="57%" r="35%">
+      <stop offset="0%" stop-color="#2060a0" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <rect width="800" height="460" fill="url(#pulse4)"/>
+    <!-- Brume au sol -->
+    <ellipse cx="400" cy="420" rx="300" ry="30" fill="#102030" opacity="0.3"/>
+  </svg>`,
+
+  5: `<svg viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="g5" cx="50%" cy="50%" r="60%">
+        <stop offset="0%" stop-color="#080a14"/>
+        <stop offset="100%" stop-color="#020408"/>
+      </radialGradient>
+    </defs>
+    <rect width="800" height="460" fill="url(#g5)"/>
+    <!-- Silhouette de combat instable -->
+    <!-- Corps -->
+    <g opacity="0.75">
+      <ellipse cx="400" cy="185" rx="28" ry="32" fill="#0a1428" stroke="#4080c0" stroke-width="1.5"/>
+      <!-- Bras gauche spectral -->
+      <path d="M374,200 Q330,220 310,250 Q325,245 340,255 Q360,225 378,215" fill="#0d1830" stroke="#3070b0" stroke-width="1" opacity="0.8"/>
+      <!-- Bras droit avec frappe -->
+      <path d="M426,200 Q470,180 500,200 Q490,215 475,210 Q455,195 430,208" fill="#0d1830" stroke="#3070b0" stroke-width="1" opacity="0.8"/>
+      <!-- Corps inférieur -->
+      <path d="M380,215 Q390,280 385,330 Q400,335 415,330 Q410,280 420,215" fill="#0a1428" stroke="#2060a0" stroke-width="1" opacity="0.7"/>
+    </g>
+    <!-- Chaînes autour -->
+    <g stroke="#3070b0" stroke-width="2" fill="none" opacity="0.5" stroke-dasharray="5,3">
+      <path d="M300,150 Q350,160 380,185"/>
+      <path d="M500,150 Q450,160 420,185"/>
+      <path d="M320,320 Q360,290 385,265"/>
+      <path d="M480,320 Q440,290 415,265"/>
+      <path d="M400,60 Q400,100 400,155"/>
+    </g>
+    <!-- Yeux -->
+    <circle cx="391" cy="182" r="5" fill="#50a0e0" opacity="0.9"/>
+    <circle cx="409" cy="182" r="5" fill="#50a0e0" opacity="0.9"/>
+    <!-- Énergie nécrotique qui se dégage -->
+    <g opacity="0.2">
+      <circle cx="400" cy="185" r="50" fill="none" stroke="#2060a0" stroke-width="1"/>
+      <circle cx="400" cy="185" r="80" fill="none" stroke="#1a4070" stroke-width="1" stroke-dasharray="4,8"/>
+    </g>
+    <!-- Cercle de pierre fissuré au sol -->
+    <ellipse cx="400" cy="380" rx="180" ry="40" fill="none" stroke="#1a3050" stroke-width="2"/>
+    <path d="M320,380 Q360,372 400,378 Q440,384 480,376" stroke="#3070b0" stroke-width="1.5" fill="none" opacity="0.4"/>
+    <!-- Fragments de chaînes orbitaux -->
+    <g fill="#2060a0" opacity="0.5">
+      <rect x="330" y="130" width="12" height="4" rx="2" transform="rotate(-30 336 132)"/>
+      <rect x="458" y="140" width="12" height="4" rx="2" transform="rotate(25 464 142)"/>
+      <rect x="340" y="290" width="10" height="4" rx="2" transform="rotate(45 345 292)"/>
+      <rect x="455" y="285" width="10" height="4" rx="2" transform="rotate(-40 460 287)"/>
+    </g>
+    <!-- Lueur bleue -->
+    <radialGradient id="blue5" cx="50%" cy="42%" r="40%">
+      <stop offset="0%" stop-color="#1040a0" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <rect width="800" height="460" fill="url(#blue5)"/>
+  </svg>`,
+
+  6: `<svg viewBox="0 0 800 460" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+    <defs>
+      <radialGradient id="g6" cx="50%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="#080a10"/>
+        <stop offset="100%" stop-color="#020306"/>
+      </radialGradient>
+    </defs>
+    <rect width="800" height="460" fill="url(#g6)"/>
+    <!-- Fragment lumineux central -->
+    <g transform="translate(400,200)">
+      <!-- Lueur externe -->
+      <circle cx="0" cy="0" r="90" fill="#2060a0" opacity="0.04"/>
+      <circle cx="0" cy="0" r="55" fill="#3070b0" opacity="0.07"/>
+      <circle cx="0" cy="0" r="30" fill="#4080c0" opacity="0.12"/>
+      <!-- Fragment d'os -->
+      <path d="M-8,-35 Q-3,-20 0,-8 Q3,-20 8,-35 Q14,-28 18,-18 Q12,-8 8,5 Q14,15 10,25 Q5,20 0,30 Q-5,20 -10,25 Q-14,15 -8,5 Q-12,-8 -18,-18 Q-14,-28 -8,-35 Z" fill="#0a1830" stroke="#5090d0" stroke-width="1.5"/>
+      <!-- Veine de lumière bleue dans le fragment -->
+      <path d="M0,-30 Q2,-15 0,0 Q-2,15 0,28" stroke="#70b0e8" stroke-width="2" fill="none" opacity="0.8"/>
+      <path d="M-5,-20 Q0,-10 5,-5 Q0,5 -5,18" stroke="#50a0d8" stroke-width="1" fill="none" opacity="0.5"/>
+      <!-- Éclat de lumière -->
+      <circle cx="0" cy="0" r="4" fill="#90c8f0" opacity="0.9"/>
+    </g>
+    <!-- Runes au sol autour -->
+    <g fill="none" stroke="#1a3050" stroke-width="1" opacity="0.5">
+      <circle cx="400" cy="200" r="120"/>
+      <circle cx="400" cy="200" r="130" stroke-dasharray="3,10"/>
+    </g>
+    <!-- Petites particules de lumière -->
+    <g fill="#60a0d0" opacity="0.4">
+      <circle cx="340" cy="155" r="2"/>
+      <circle cx="460" cy="160" r="2"/>
+      <circle cx="310" cy="215" r="1.5"/>
+      <circle cx="495" cy="220" r="1.5"/>
+      <circle cx="350" cy="265" r="2"/>
+      <circle cx="455" cy="258" r="2"/>
+      <circle cx="400" cy="100" r="1.5"/>
+      <circle cx="400" cy="305" r="1.5"/>
+    </g>
+    <!-- Texte "Ce que vous allez trouver..." en très subtil -->
+    <text x="400" y="380" text-anchor="middle" font-family="serif" font-size="11" fill="#2a3a50" opacity="0.4" font-style="italic">Ce que vous allez trouver... gardez-le loin de ce qui dort.</text>
+    <!-- Ambiance sombre et apaisée -->
+    <radialGradient id="calm6" cx="50%" cy="44%" r="45%">
+      <stop offset="0%" stop-color="#1040a0" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <rect width="800" height="460" fill="url(#calm6)"/>
+  </svg>`
+};
+
+/* ══ TOKENS & GRID ══ */
+const tokens=[
+  {id:"f",label:"Guerrier",color:"#2271b3",emoji:"⚔"},
+  {id:"w",label:"Mage",color:"#6a3ab7",emoji:"✦"},
+  {id:"r",label:"Roublard",color:"#2a7a43",emoji:"◆"},
+  {id:"c",label:"Clerc",color:"#8a6020",emoji:"✧"},
+  {id:"e1",label:"Ennemi",color:"#8b2020",emoji:"✕"},
+  {id:"e2",label:"Boss",color:"#5a0000",emoji:"☠",size:2}
+];
+let selectedToken=tokens[0],placed=[],currentBg="dungeon";
+const CELL=40;let COLS,ROWS;
+
+/* ══ SCENE ══ */
+let sceneIndex=0;
+
+function showScene(idx){
+  sceneIndex=idx;
+  const s=SESSION.scenes[idx];
+  document.getElementById("sceneLabel").textContent=`Scène ${idx+1} sur ${SESSION.scenes.length}`;
+  document.getElementById("sceneTitle").textContent=s.name;
+  document.getElementById("sceneType").textContent=s.type;
+  document.getElementById("sceneDesc").textContent=s.description;
+  document.getElementById("ambianceTags").innerHTML=s.ambiance.map(a=>`<div class="ambiance-tag">${a}</div>`).join("");
+  document.getElementById("sensoryText").textContent=s.sensory;
+  // SVG illustration
+  const heroDiv=document.getElementById("heroSvg");
+  heroDiv.innerHTML=illustrations[idx]||illustrations[0];
+  // Monsters
+  const ml=document.getElementById("monstersList");
+  const ms=document.getElementById("monstersSection");
+  if(s.monsters&&s.monsters.length){
+    ms.style.display="block";
+    ml.innerHTML=s.monsters.map(m=>`
+    <div class="monster-row">
+      <div class="monster-emoji-wrap"><span>${m.emoji||"👾"}</span></div>
+      <div class="monster-info">
+        <div class="monster-name">${m.name}</div>
+        <div class="monster-cr">CR ${m.cr} · ${m.count>1?m.count+"× ":""}${m.type}</div>
+        <div class="monster-desc">${m.appearance}</div>
+      </div>
+    </div>`).join("");
+  } else {ms.style.display="none"}
+  document.getElementById("navNum").textContent=`${idx+1} / ${SESSION.scenes.length}`;
+  document.getElementById("navName").textContent=s.name;
+  document.getElementById("prevBtn").disabled=idx===0;
+  document.getElementById("nextBtn").disabled=idx===SESSION.scenes.length-1;
+  placed=[];drawGrid();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function navigate(dir){
+  const n=sceneIndex+dir;
+  if(n>=0&&n<SESSION.scenes.length)showScene(n);
+}
+
+/* ══ GRID ══ */
+function initCanvas(){
+  const canvas=document.getElementById("grid");
+  const wrap=canvas.parentElement;
+  const w=wrap.clientWidth||640;
+  COLS=Math.floor(w/CELL);
+  ROWS=Math.floor(Math.min(420,window.innerHeight*.45)/CELL);
+  canvas.width=COLS*CELL;canvas.height=ROWS*CELL;
+}
+function getBg(bg){
+  const m={dungeon:{a:"#1a1714",b:"#141210",grid:"rgba(120,100,60,0.2)"},forest:{a:"#0d1a0a",b:"#0a1408",grid:"rgba(60,130,50,0.25)"},taverne:{a:"#1a1008",b:"#140c06",grid:"rgba(180,120,50,0.2)"},cave:{a:"#0a0e1a",b:"#080b14",grid:"rgba(60,80,160,0.2)"},plaine:{a:"#0a1a08",b:"#081408",grid:"rgba(80,160,50,0.2)"}};
+  return m[bg]||m.dungeon;
+}
+function drawGrid(){
+  const canvas=document.getElementById("grid");
+  if(!canvas||!COLS)return;
+  const ctx=canvas.getContext("2d");
+  const bg=getBg(currentBg);
+  for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){ctx.fillStyle=(r+c)%2===0?bg.a:bg.b;ctx.fillRect(c*CELL,r*CELL,CELL,CELL)}
+  ctx.strokeStyle=bg.grid;ctx.lineWidth=0.5;
+  for(let c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(c*CELL,0);ctx.lineTo(c*CELL,ROWS*CELL);ctx.stroke()}
+  for(let r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(0,r*CELL);ctx.lineTo(COLS*CELL,r*CELL);ctx.stroke()}
+  placed.forEach(p=>{
+    const def=tokens.find(t=>t.id===p.type);const s=def.size||1;
+    const cx=p.col*CELL+s*CELL/2,cy=p.row*CELL+s*CELL/2,r=s*CELL/2-4;
+    ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle=def.color;ctx.fill();
+    ctx.strokeStyle="rgba(255,255,255,0.35)";ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle="#fff";ctx.font=`bold ${s>1?18:13}px serif`;ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.fillText(def.emoji,cx,cy);
+  });
+  renderLegend();
+}
+function renderLegend(){
+  const used=[...new Set(placed.map(p=>p.type))];
+  document.getElementById("legend").innerHTML=used.map(id=>{const d=tokens.find(t=>t.id===id);return`<div class="legend-item"><div class="token-dot" style="background:${d.color};width:14px;height:14px;border-radius:50%"></div><span>${d.label}</span></div>`}).join("");
+}
+function renderTokenBar(){
+  document.getElementById("tokenBar").innerHTML=tokens.map(t=>`
+  <button class="token-btn${selectedToken.id===t.id?" selected":""}" onclick="selectTok('${t.id}')" style="${selectedToken.id===t.id?"border-color:"+t.color:""}">
+    <div class="token-dot" style="background:${t.color}"></div>${t.label}
+  </button>`).join("");
+}
+function selectTok(id){selectedToken=tokens.find(t=>t.id===id);renderTokenBar()}
+function changeBg(){currentBg=document.getElementById("bgSel").value;drawGrid()}
+function clearTokens(){placed=[];drawGrid()}
+
+document.addEventListener("DOMContentLoaded",()=>{
+  initCanvas();renderTokenBar();
+  const canvas=document.getElementById("grid");
+  canvas.addEventListener("click",e=>{
+    const rect=canvas.getBoundingClientRect();
+    const sx=canvas.width/rect.width,sy=canvas.height/rect.height;
+    const col=Math.floor((e.clientX-rect.left)*sx/CELL),row=Math.floor((e.clientY-rect.top)*sy/CELL);
+    if(col<0||col>=COLS||row<0||row>=ROWS)return;
+    const idx=placed.findIndex(p=>p.col===col&&p.row===row&&p.type===selectedToken.id);
+    if(idx>=0)placed.splice(idx,1);else placed.push({col,row,type:selectedToken.id});
+    drawGrid();
+  });
+  canvas.addEventListener("contextmenu",e=>{
+    e.preventDefault();
+    const rect=canvas.getBoundingClientRect();
+    const sx=canvas.width/rect.width,sy=canvas.height/rect.height;
+    const col=Math.floor((e.clientX-rect.left)*sx/CELL),row=Math.floor((e.clientY-rect.top)*sy/CELL);
+    placed=placed.filter(p=>!(p.col===col&&p.row===row));drawGrid();
+  });
+  showScene(0);
+});
+</script>
+</body>
+</html>
