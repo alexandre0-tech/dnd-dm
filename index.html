@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DM Tracker — Les Ruines Oubliées</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0e0c0a;--surface:#1a1612;--surface2:#231f1a;--border:rgba(180,140,60,0.25);--gold:#c9a84c;--gold-light:#e8c96a;--red:#c0392b;--red-light:#e74c3c;--green:#2ecc71;--text:#e8dcc8;--text-muted:#8a7a62;--text-dim:#5a4e3a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Crimson Text',Georgia,serif;font-size:16px;min-height:100vh;background-image:radial-gradient(ellipse at 20% 0%,rgba(201,168,76,.06) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(192,57,43,.05) 0%,transparent 60%)}
+header{border-bottom:1px solid var(--border);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;background:rgba(10,8,6,.8);backdrop-filter:blur(8px);position:sticky;top:0;z-index:100}
+header h1{font-family:'Cinzel',serif;font-size:1.1rem;font-weight:600;color:var(--gold);letter-spacing:.08em}
+header a{font-family:'Cinzel',serif;font-size:.75rem;color:var(--text-muted);text-decoration:none;border:1px solid var(--border);padding:.35rem .9rem;border-radius:4px;transition:all .2s}
+header a:hover{color:var(--gold);border-color:var(--gold)}
+.main{max-width:960px;margin:0 auto;padding:1.5rem 1rem 3rem}
+
+/* ── COMBAT TABS ── */
+.combat-tabs{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap}
+.c-tab{padding:.5rem 1.4rem;font-family:'Cinzel',serif;font-size:.72rem;letter-spacing:.08em;border:1px solid var(--border);border-radius:3px;cursor:pointer;background:transparent;color:var(--text-muted);transition:all .2s}
+.c-tab:hover{color:var(--gold);border-color:rgba(201,168,60,.4)}
+.c-tab.active{background:rgba(201,168,76,.12);color:var(--gold);border-color:var(--gold)}
+.combat-view{display:none}
+.combat-view.active{display:block}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:1.25rem 1.5rem;margin-bottom:1rem}
+.card-title{font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.12em;color:var(--text-dim);text-transform:uppercase;margin-bottom:.75rem}
+.section-label{font-family:'Cinzel',serif;font-size:.8rem;font-weight:600;color:var(--gold);letter-spacing:.06em;margin-bottom:1rem;padding-bottom:.4rem;border-bottom:1px solid var(--border)}
+
+/* ── ENEMY GRID (for tribunal — 4 units) ── */
+.enemy-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.25rem}
+.enemy-card{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:1rem}
+.enemy-card.dead{opacity:.4;border-color:rgba(192,57,43,.3)}
+.enemy-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+.enemy-name{font-family:'Cinzel',serif;font-size:.8rem;font-weight:600;color:var(--gold-light)}
+.enemy-type{font-size:.75rem;color:var(--text-muted);font-style:italic}
+.hp-inline{display:flex;align-items:baseline;gap:.35rem;margin-bottom:.4rem}
+.hp-big{font-family:'Cinzel',serif;font-size:1.5rem;font-weight:700}
+.hp-of{font-size:.85rem;color:var(--text-muted)}
+.hp-bar-track{height:7px;background:rgba(255,255,255,.06);border-radius:7px;overflow:hidden;margin-bottom:.6rem}
+.hp-bar-fill{height:100%;border-radius:7px;transition:width .35s,background .35s}
+.hp-ctrl{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.hp-input-sm{width:60px;padding:.3rem .4rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'Crimson Text',serif;font-size:.95rem;text-align:center}
+.hp-input-sm:focus{outline:none;border-color:var(--gold)}
+.btn-sm{padding:.28rem .7rem;font-family:'Cinzel',serif;font-size:.58rem;letter-spacing:.07em;border-radius:3px;cursor:pointer;border:1px solid;transition:all .2s;background:transparent}
+.btn-dmg{border-color:rgba(192,57,43,.5);color:#e07060}
+.btn-dmg:hover{background:rgba(192,57,43,.15)}
+.btn-heal{border-color:rgba(46,204,113,.4);color:#5dde8a}
+.btn-heal:hover{background:rgba(46,204,113,.1)}
+.btn-reset-sm{border-color:var(--border);color:var(--text-dim)}
+.btn-reset-sm:hover{border-color:var(--text-muted);color:var(--text-muted)}
+.dead-badge{font-family:'Cinzel',serif;font-size:.6rem;color:#e07060;border:1px solid rgba(192,57,43,.4);border-radius:3px;padding:.1rem .4rem}
+
+/* ── STAT / INFO ── */
+.monster-name{font-family:'Cinzel',serif;font-size:1.4rem;font-weight:600;color:var(--gold-light);margin-bottom:.2rem}
+.monster-meta{font-size:.9rem;color:var(--text-muted);font-style:italic;margin-bottom:.75rem}
+.info-row{font-size:.95rem;color:var(--text-muted);margin-bottom:.4rem}
+.info-row strong{color:var(--text);font-weight:600}
+.cr-badge{display:inline-block;padding:.15rem .7rem;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.3);border-radius:20px;font-family:'Cinzel',serif;font-size:.7rem;color:var(--gold);margin-left:.75rem;vertical-align:middle}
+.stat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:1rem}
+.stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:.6rem .25rem;text-align:center}
+.stat-label{font-family:'Cinzel',serif;font-size:.6rem;letter-spacing:.08em;color:var(--text-dim);margin-bottom:.2rem}
+.stat-score{font-size:1.2rem;font-weight:600;color:var(--text)}
+.stat-mod{font-size:.8rem;color:var(--gold)}
+
+/* ── HP BOSS ── */
+.hp-numbers{display:flex;align-items:baseline;gap:.5rem;margin-bottom:.5rem}
+.hp-current{font-family:'Cinzel',serif;font-size:2rem;font-weight:700}
+.hp-max{font-size:1rem;color:var(--text-muted)}
+.hp-bar-track-lg{height:10px;background:rgba(255,255,255,.06);border-radius:10px;overflow:hidden;margin-bottom:.75rem}
+.hp-bar-fill-lg{height:100%;border-radius:10px;transition:width .4s,background .4s}
+.hp-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hp-input{width:80px;padding:.4rem .6rem;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'Crimson Text',serif;font-size:1rem;text-align:center}
+.hp-input:focus{outline:none;border-color:var(--gold)}
+.btn{padding:.4rem 1rem;font-family:'Cinzel',serif;font-size:.65rem;letter-spacing:.08em;border-radius:4px;cursor:pointer;border:1px solid;transition:all .2s;background:transparent}
+.btn-dmg-lg{border-color:rgba(192,57,43,.5);color:#e07060}
+.btn-dmg-lg:hover{background:rgba(192,57,43,.15);border-color:var(--red-light)}
+.btn-heal-lg{border-color:rgba(46,204,113,.4);color:#5dde8a}
+.btn-heal-lg:hover{background:rgba(46,204,113,.1)}
+.btn-reset{border-color:var(--border);color:var(--text-muted)}
+.btn-reset:hover{border-color:var(--text-muted);color:var(--text)}
+.btn-primary{background:rgba(201,168,76,.12);border-color:var(--gold);color:var(--gold)}
+.btn-primary:hover{background:rgba(201,168,76,.22)}
+
+/* ── ATTACKS ── */
+.atk-card{border:1px solid var(--border);border-radius:5px;padding:1rem;margin-bottom:.75rem;background:var(--surface2)}
+.atk-name{font-family:'Cinzel',serif;font-size:.9rem;font-weight:600;color:var(--gold-light);margin-bottom:.25rem}
+.atk-meta{font-size:.85rem;color:var(--text-muted);font-style:italic;margin-bottom:.75rem}
+.roll-area{background:rgba(0,0,0,.2);border-radius:4px;padding:.75rem}
+.roll-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:.5rem}
+.roll-label{font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.06em;color:var(--text-dim);width:90px}
+.roll-input{width:72px;padding:.35rem .5rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'Crimson Text',serif;font-size:1rem;text-align:center}
+.roll-input:focus{outline:none;border-color:var(--gold)}
+.result{border-radius:4px;padding:.75rem 1rem;margin-top:.75rem;font-size:.95rem;line-height:1.6}
+.result-hit{background:rgba(46,204,113,.08);border:1px solid rgba(46,204,113,.3);color:#7de8a0}
+.result-miss{background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.3);color:#e07070}
+.result-crit{background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.4);color:var(--gold-light)}
+.result-zone{background:rgba(100,120,220,.08);border:1px solid rgba(100,120,220,.3);color:#a0b0f0}
+.calc-step{font-size:.85rem;opacity:.85;margin-top:.25rem;padding-left:.75rem;border-left:2px solid currentColor}
+.trait{margin-bottom:.75rem;font-size:.95rem;line-height:1.65}
+.trait-name{font-family:'Cinzel',serif;font-size:.8rem;color:var(--gold)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:.4rem}
+.tag{padding:.15rem .65rem;border-radius:20px;font-size:.8rem;border:1px solid}
+.tag-immune{background:rgba(46,204,113,.08);border-color:rgba(46,204,113,.3);color:#7de8a0}
+.tag-resist{background:rgba(100,120,220,.08);border-color:rgba(100,120,220,.3);color:#a0b0f0}
+.dm-note{font-style:italic;color:var(--text-muted);font-size:.93rem;line-height:1.7;border-left:2px solid var(--border);padding-left:.75rem;white-space:pre-line}
+.lore-box{background:rgba(201,168,76,.04);border:1px solid rgba(201,168,76,.15);border-radius:4px;padding:.75rem 1rem;margin-bottom:1rem;font-size:.9rem;color:var(--text-muted);line-height:1.7;font-style:italic}
+.phase-alert{background:rgba(192,57,43,.07);border:1px solid rgba(192,57,43,.25);border-radius:4px;padding:.6rem 1rem;margin-bottom:.75rem;font-size:.88rem;color:#e07060}
+.reset-all-btn{padding:.35rem 1rem;font-family:'Cinzel',serif;font-size:.62rem;letter-spacing:.07em;border:1px solid rgba(192,57,43,.35);border-radius:3px;cursor:pointer;background:transparent;color:#b06060;transition:all .2s;margin-left:auto}
+.reset-all-btn:hover{background:rgba(192,57,43,.1)}
+@media(max-width:580px){.enemy-grid{grid-template-columns:1fr}.stat-grid{grid-template-columns:repeat(3,1fr)}.roll-row{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚔ DM Tracker — Les Ruines Oubliées</h1>
+  <a href="scene.html">→ Page des joueurs</a>
+</header>
+<div class="main">
+
+  <!-- COMBAT TABS -->
+  <div class="combat-tabs">
+    <button class="c-tab active" onclick="switchTab('tribunal')">⚖ Tribunal des Mensonges</button>
+    <button class="c-tab" onclick="switchTab('sael')">👻 Sael — Boss Final</button>
+  </div>
+
+  <!-- ══ VUE 1 : TRIBUNAL ══ -->
+  <div class="combat-view active" id="view-tribunal">
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <div class="section-label" style="margin-bottom:0">Gardiens du Tribunal — 4 unités</div>
+        <button class="reset-all-btn" onclick="resetAll()">↺ Reset tout</button>
+      </div>
+      <div class="enemy-grid" id="enemyGrid"></div>
+    </div>
+
+    <!-- Stats Guerrier -->
+    <div class="card">
+      <div class="section-label">Squelette Guerrier Caelthari — Stats</div>
+      <div class="info-row"><strong>CA</strong> 14 (armure ancienne) &nbsp;·&nbsp; <strong>PV</strong> 18 (4d8) &nbsp;·&nbsp; <strong>Vitesse</strong> 9 m</div>
+      <div class="info-row" style="font-size:.85rem;color:var(--text-dim);margin-bottom:.75rem">FOR 14 (+2) · DEX 10 · CON 10 · Vision dans le noir 18 m</div>
+      <div class="tags" style="margin-bottom:.75rem">
+        <span class="tag tag-immune">immunité poison</span>
+        <span class="tag tag-immune">immunité empoisonnement</span>
+        <span class="tag tag-immune">immunité charme</span>
+      </div>
+      <div class="atk-card">
+        <div class="atk-name">Épée ancienne</div>
+        <div class="atk-meta">Mêlée · Bonus +4 · Portée 1,5 m · 1d8+2 tranchant</div>
+        <div class="roll-area">
+          <div class="roll-row">
+            <span class="roll-label">Jet d'attaque</span>
+            <input type="number" class="roll-input" id="g-ar0" min="1" max="20" placeholder="d20">
+            <span class="roll-label">CA cible</span>
+            <input type="number" class="roll-input" id="g-ac0" min="1" max="30" placeholder="CA">
+          </div>
+          <div class="roll-row">
+            <span class="roll-label">Jet de dégâts</span>
+            <input type="number" class="roll-input" id="g-dr0" min="1" placeholder="1d8">
+          </div>
+          <button class="btn btn-primary" onclick="resolveAtk('g',0,4,2,'tranchant')">Résoudre →</button>
+          <div id="g-res0"></div>
+        </div>
+      </div>
+      <div class="atk-card">
+        <div class="atk-name">Frappe runique <span style="font-size:.75rem;color:var(--text-dim)">(1× par combat)</span></div>
+        <div class="atk-meta">Mêlée · Bonus +4 · Portée 1,5 m · 2d6+2 force</div>
+        <div class="roll-area">
+          <div class="roll-row">
+            <span class="roll-label">Jet d'attaque</span>
+            <input type="number" class="roll-input" id="g-ar1" min="1" max="20" placeholder="d20">
+            <span class="roll-label">CA cible</span>
+            <input type="number" class="roll-input" id="g-ac1" min="1" max="30" placeholder="CA">
+          </div>
+          <div class="roll-row">
+            <span class="roll-label">Jet de dégâts</span>
+            <input type="number" class="roll-input" id="g-dr1" min="1" placeholder="2d6">
+          </div>
+          <button class="btn btn-primary" onclick="resolveAtk('g',1,4,2,'force')">Résoudre →</button>
+          <div id="g-res1"></div>
+        </div>
+      </div>
+      <div class="dm-note">Avance vers la cible la plus proche. Protège les mages à partir du tour 2. Utilise la Frappe runique sur le personnage le plus résistant.</div>
+    </div>
+
+    <!-- Stats Mage -->
+    <div class="card">
+      <div class="section-label">Squelette Mage Caelthari — Stats</div>
+      <div class="info-row"><strong>CA</strong> 12 (robes magiques) &nbsp;·&nbsp; <strong>PV</strong> 13 (3d8) &nbsp;·&nbsp; <strong>Vitesse</strong> 9 m</div>
+      <div class="info-row" style="font-size:.85rem;color:var(--text-dim);margin-bottom:.75rem">FOR 6 (-2) · DEX 14 (+2) · INT 14 (+2) · Vision dans le noir 18 m</div>
+      <div class="tags" style="margin-bottom:.75rem">
+        <span class="tag tag-immune">immunité poison</span>
+        <span class="tag tag-immune">immunité empoisonnement</span>
+        <span class="tag tag-immune">immunité charme</span>
+      </div>
+      <div class="atk-card">
+        <div class="atk-name">Projectile magique <span style="font-size:.75rem;color:var(--text-dim)">(touche automatiquement)</span></div>
+        <div class="atk-meta">Distance · Portée 18 m · 2d4+2 force · pas de jet d'attaque</div>
+        <div class="roll-area">
+          <div class="roll-row">
+            <span class="roll-label">Jet de dégâts</span>
+            <input type="number" class="roll-input" id="m-dr0" min="1" placeholder="2d4">
+          </div>
+          <button class="btn btn-primary" onclick="resolveAuto('m',0,2,'force')">Résoudre →</button>
+          <div id="m-res0"></div>
+        </div>
+      </div>
+      <div class="atk-card">
+        <div class="atk-name">Entrave runique <span style="font-size:.75rem;color:var(--text-dim)">(Recharge 5-6)</span></div>
+        <div class="atk-meta">Zone · Portée 9 m · DEX DC 13 · entravé jusqu'à fin du prochain tour</div>
+        <div class="roll-area">
+          <div style="font-size:.9rem;color:var(--text-muted);margin-bottom:.5rem">Le personnage ciblé doit réussir un jet de sauvegarde DEX DC 13.</div>
+          <div style="font-size:.88rem;color:var(--text-muted)"><strong style="color:#a0b0f0">Échec :</strong> entravé (vitesse 0, désavantage aux attaques) jusqu'à la fin de son prochain tour.<br><strong style="color:#7de8a0">Réussite :</strong> aucun effet.</div>
+        </div>
+      </div>
+      <div class="dm-note">Reste à distance maximale. Cible les lanceurs de sorts avec le Projectile. Entrave le personnage le plus dangereux qui avance.</div>
+    </div>
+
+  </div><!-- fin tribunal -->
+
+  <!-- ══ VUE 2 : SAEL ══ -->
+  <div class="combat-view" id="view-sael">
+
+    <div class="card">
+      <div class="monster-name">Sael, le Gardien Enchaîné<span class="cr-badge">CR 2 · 450 XP</span></div>
+      <div class="monster-meta">Caelthari contaminé · Boss final</div>
+      <div class="info-row"><strong>CA</strong> 13 (forme instable) &nbsp;·&nbsp; <strong>Vitesse</strong> 9 m (lié au cercle — max 9 m)</div>
+      <div class="info-row" style="font-size:.85rem;color:var(--text-dim)">Vision dans le noir 18 m &nbsp;·&nbsp; Jets de sauvegarde : Con +5, Sag +2</div>
+    </div>
+
+    <div class="lore-box">Ce n'était pas un monstre. C'était un Caelthari — transformé par un contact trop prolongé avec le dieu inachevé. Ses frères l'ont emprisonné ici parce qu'ils ne pouvaient pas le détruire. Il combat parce que le sceau le contraint. Même contre des gens qui n'ont rien fait de mal.</div>
+
+    <div class="card">
+      <div class="card-title">Points de vie — 6d8+18</div>
+      <div class="hp-numbers">
+        <span class="hp-current" id="saelHpNum" style="color:#2ecc71">45</span>
+        <span class="hp-max">/ 45 PV</span>
+      </div>
+      <div class="hp-bar-track-lg"><div class="hp-bar-fill-lg" id="saelHpBar" style="width:100%;background:#2ecc71"></div></div>
+      <div id="saelPhaseAlert" style="display:none" class="phase-alert">⚠ Phase critique — une chaîne se brise ! Avantage sur 1 attaque sur 2. Pierres du plafond : DEX DC 12 ou 1d4 dégâts (1× par tour).</div>
+      <div class="hp-controls">
+        <input type="number" class="hp-input" id="saelHpVal" placeholder="pts" min="0">
+        <button class="btn btn-dmg-lg" onclick="saelApplyHp(-1)">Dégât</button>
+        <button class="btn btn-heal-lg" onclick="saelApplyHp(1)">Soin</button>
+        <button class="btn btn-reset" onclick="saelResetHp()">Reset</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Caractéristiques</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-label">FOR</div><div class="stat-score">16</div><div class="stat-mod">+3</div></div>
+        <div class="stat-box"><div class="stat-label">DEX</div><div class="stat-score">10</div><div class="stat-mod">+0</div></div>
+        <div class="stat-box"><div class="stat-label">CON</div><div class="stat-score">16</div><div class="stat-mod">+3</div></div>
+        <div class="stat-box"><div class="stat-label">INT</div><div class="stat-score">12</div><div class="stat-mod">+1</div></div>
+        <div class="stat-box"><div class="stat-label">SAG</div><div class="stat-score">10</div><div class="stat-mod">+0</div></div>
+        <div class="stat-box"><div class="stat-label">CHA</div><div class="stat-score">14</div><div class="stat-mod">+2</div></div>
+      </div>
+      <div style="margin-top:.5rem">
+        <div class="card-title" style="margin-bottom:.4rem">Immunités</div>
+        <div class="tags"><span class="tag tag-immune">charme</span><span class="tag tag-immune">peur</span><span class="tag tag-immune">empoisonnement</span></div>
+      </div>
+      <div style="margin-top:.75rem">
+        <div class="card-title" style="margin-bottom:.4rem">Résistances</div>
+        <div class="tags"><span class="tag tag-resist">contondant (non magique)</span><span class="tag tag-resist">perforant (non magique)</span><span class="tag tag-resist">tranchant (non magique)</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Traits</div>
+      <div class="trait"><span class="trait-name">Forme instable. </span>Les attaques magiques ont désavantage — sa forme incorporelle partielle dévie l'énergie de façon imprévisible.</div>
+      <div class="trait"><span class="trait-name">Lien au sceau. </span>Sael ne peut pas s'éloigner à plus de 9 m du cercle central. Les chaînes spectrales le retiennent physiquement.</div>
+      <div class="trait"><span class="trait-name">Phase critique (≤ 22 PV). </span>Une chaîne se brise. Avantage sur une attaque un tour sur deux. Pierres du plafond : DEX DC 12 ou 1d4 dégâts, une fois par tour.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Attaques</div>
+      <div class="atk-card">
+        <div class="atk-name">Frappe corrompue</div>
+        <div class="atk-meta">Mêlée · Bonus +4 · Portée 1,5 m · 1d8+3 nécrotique</div>
+        <div class="roll-area">
+          <div class="roll-row">
+            <span class="roll-label">Jet d'attaque</span>
+            <input type="number" class="roll-input" id="s-ar0" min="1" max="20" placeholder="d20">
+            <span class="roll-label">CA cible</span>
+            <input type="number" class="roll-input" id="s-ac0" min="1" max="30" placeholder="CA">
+          </div>
+          <div class="roll-row">
+            <span class="roll-label">Jet de dégâts</span>
+            <input type="number" class="roll-input" id="s-dr0" min="1" placeholder="1d8">
+          </div>
+          <button class="btn btn-primary" onclick="resolveAtk('s',0,4,3,'nécrotique')">Résoudre →</button>
+          <div id="s-res0"></div>
+        </div>
+      </div>
+      <div class="atk-card">
+        <div class="atk-name">Onde instable <span style="font-size:.75rem;color:var(--text-dim)">(Recharge 5-6)</span></div>
+        <div class="atk-meta">Zone · Tous les personnages à 3 m · DEX DC 12 · 2d6 force (moitié si réussi)</div>
+        <div class="roll-area">
+          <div class="roll-row">
+            <span class="roll-label">Jet de dégâts</span>
+            <input type="number" class="roll-input" id="s-dr1" min="1" placeholder="2d6">
+          </div>
+          <button class="btn btn-primary" onclick="resolveZone('s',1)">Résoudre →</button>
+          <div id="s-res1"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Note du DM</div>
+      <div class="dm-note">Tour 1 : Frappe. Tour 2 : Frappe. Tour 3 : Onde si disponible. Alternance ensuite.
+
+Trop difficile → dégâts 1d6+2, Onde une seule fois, une chaîne retient Sael un tour.
+Trop facile → +5-10 PV, pierres tombent 2× par tour.
+
+Sa mort : ne pas traiter comme une victoire ordinaire. Sa forme se dissout lentement. Quelque chose change dans ses yeux — du soulagement, peut-être.
+Derniers mots : « Ce que vous allez trouver... gardez-le loin de ce qui dort. »</div>
+    </div>
+
+  </div><!-- fin sael -->
+</div><!-- fin main -->
+
+<script>
+/* ══ TABS ══ */
+function switchTab(id){
+  document.querySelectorAll('.combat-view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.c-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+/* ══ TRIBUNAL — 4 HP BARS ══ */
+const units = [
+  {id:'g1', name:'Guerrier I',  type:'Squelette Guerrier', maxHp:18, hp:18, color:'#c9a84c'},
+  {id:'g2', name:'Guerrier II', type:'Squelette Guerrier', maxHp:18, hp:18, color:'#c9a84c'},
+  {id:'m1', name:'Mage I',      type:'Squelette Mage',    maxHp:13, hp:13, color:'#7090d8'},
+  {id:'m2', name:'Mage II',     type:'Squelette Mage',    maxHp:13, hp:13, color:'#7090d8'},
+];
+
+function hpColor(p){if(p>.5)return'#2ecc71';if(p>.25)return'#e67e22';return'#c0392b'}
+
+function renderEnemyGrid(){
+  const grid = document.getElementById('enemyGrid');
+  grid.innerHTML = units.map(u=>{
+    const pct = Math.max(0, u.hp/u.maxHp);
+    const dead = u.hp <= 0;
+    return `
+    <div class="enemy-card${dead?' dead':''}" id="card-${u.id}">
+      <div class="enemy-header">
+        <div>
+          <div class="enemy-name">${u.name}${dead?' <span class="dead-badge">MORT</span>':''}</div>
+          <div class="enemy-type">${u.type}</div>
+        </div>
+      </div>
+      <div class="hp-inline">
+        <span class="hp-big" id="hp-${u.id}" style="color:${dead?'#c0392b':hpColor(pct)}">${u.hp}</span>
+        <span class="hp-of">/ ${u.maxHp} PV</span>
+      </div>
+      <div class="hp-bar-track">
+        <div class="hp-bar-fill" id="bar-${u.id}" style="width:${Math.round(pct*100)}%;background:${dead?'#c0392b':hpColor(pct)}"></div>
+      </div>
+      <div class="hp-ctrl">
+        <input type="number" class="hp-input-sm" id="val-${u.id}" placeholder="pts" min="0" ${dead?'disabled':''}>
+        <button class="btn-sm btn-dmg" onclick="unitHp('${u.id}',-1)" ${dead?'disabled':''}>Dégât</button>
+        <button class="btn-sm btn-heal" onclick="unitHp('${u.id}',1)" ${dead?'disabled':''}>Soin</button>
+        <button class="btn-sm btn-reset-sm" onclick="unitReset('${u.id}')">↺</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function unitHp(id, sign){
+  const u = units.find(x=>x.id===id);
+  const val = parseInt(document.getElementById('val-'+id).value)||0;
+  if(!val) return;
+  u.hp = Math.max(0, Math.min(u.maxHp, u.hp + sign*val));
+  document.getElementById('val-'+id).value='';
+  renderEnemyGrid();
+}
+function unitReset(id){
+  const u = units.find(x=>x.id===id);
+  u.hp = u.maxHp;
+  renderEnemyGrid();
+}
+function resetAll(){
+  units.forEach(u=>u.hp=u.maxHp);
+  renderEnemyGrid();
+}
+
+/* ══ SAEL HP ══ */
+let saelHp = 45;
+const SAEL_MAX = 45;
+
+function saelApplyHp(sign){
+  const val = parseInt(document.getElementById('saelHpVal').value)||0;
+  if(!val) return;
+  saelHp = Math.max(0, Math.min(SAEL_MAX, saelHp + sign*val));
+  document.getElementById('saelHpVal').value='';
+  updateSaelUI();
+}
+function saelResetHp(){saelHp=SAEL_MAX;updateSaelUI()}
+function updateSaelUI(){
+  const pct = Math.max(0, saelHp/SAEL_MAX);
+  const col = hpColor(pct);
+  document.getElementById('saelHpNum').textContent=saelHp;
+  document.getElementById('saelHpNum').style.color=col;
+  const bar=document.getElementById('saelHpBar');
+  bar.style.width=Math.round(pct*100)+'%';
+  bar.style.background=col;
+  const alert=document.getElementById('saelPhaseAlert');
+  alert.style.display = saelHp<=22 && saelHp>0 ? 'block' : 'none';
+}
+
+/* ══ ATTACK RESOLUTION ══ */
+function resolveAtk(prefix, idx, bonus, dmgBonus, dmgType){
+  const ar=parseInt(document.getElementById(prefix+'-ar'+idx)?.value);
+  const ac=parseInt(document.getElementById(prefix+'-ac'+idx)?.value);
+  const dr=parseInt(document.getElementById(prefix+'-dr'+idx)?.value);
+  const out=document.getElementById(prefix+'-res'+idx);
+  if(!ar||!ac||!dr){out.innerHTML=`<div class="result result-miss">⚠ Remplis le jet d'attaque, la CA et les dégâts.</div>`;return}
+  const total=ar+bonus;
+  const isCrit=ar===20, isFumble=ar===1, hits=isCrit||(total>=ac&&!isFumble);
+  if(isFumble){out.innerHTML=`<div class="result result-miss"><strong>💨 Raté critique</strong><div class="calc-step">Jet : 1 — échec automatique.</div></div>`}
+  else if(isCrit){const dmg=dr*2+dmgBonus;out.innerHTML=`<div class="result result-crit"><strong>⚡ COUP CRITIQUE !</strong><div class="calc-step">Jet : 20 — succès automatique.</div><div class="calc-step">(${dr}×2) + ${dmgBonus} = <strong>${dmg} dégâts ${dmgType}</strong></div></div>`}
+  else if(hits){const dmg=dr+dmgBonus;out.innerHTML=`<div class="result result-hit"><strong>✓ Touche !</strong><div class="calc-step">${ar} + ${bonus} = ${total} ≥ ${ac} (CA)</div><div class="calc-step">${dr} + ${dmgBonus} = <strong>${dmg} dégâts ${dmgType}</strong></div></div>`}
+  else{out.innerHTML=`<div class="result result-miss"><strong>✗ Raté.</strong><div class="calc-step">${ar} + ${bonus} = ${total} &lt; ${ac} (CA)</div></div>`}
+}
+
+function resolveAuto(prefix, idx, dmgBonus, dmgType){
+  const dr=parseInt(document.getElementById(prefix+'-dr'+idx)?.value);
+  const out=document.getElementById(prefix+'-res'+idx);
+  if(!dr){out.innerHTML=`<div class="result result-miss">⚠ Entre le jet de dégâts.</div>`;return}
+  const dmg=dr+dmgBonus;
+  out.innerHTML=`<div class="result result-hit"><strong>🎯 Touche automatiquement</strong><div class="calc-step">${dr} + ${dmgBonus} = <strong>${dmg} dégâts ${dmgType}</strong></div></div>`;
+}
+
+function resolveZone(prefix, idx){
+  const dr=parseInt(document.getElementById(prefix+'-dr'+idx)?.value);
+  const out=document.getElementById(prefix+'-res'+idx);
+  if(!dr){out.innerHTML=`<div class="result result-miss">⚠ Entre le jet de dégâts.</div>`;return}
+  const half=Math.floor(dr/2);
+  out.innerHTML=`<div class="result result-zone"><strong>🌀 Onde instable — tous les personnages à 3 m</strong><div class="calc-step">Jet de sauvegarde DEX DC 12 requis pour chacun.</div><div class="calc-step">Échec : <strong>${dr} dégâts force</strong></div><div class="calc-step">Réussite : <strong>${half} dégâts force</strong> (moitié)</div></div>`;
+}
+
+/* ══ INIT ══ */
+renderEnemyGrid();
+</script>
+</body>
+</html>
